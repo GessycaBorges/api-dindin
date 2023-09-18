@@ -31,7 +31,7 @@ const cadastrarUsuario = async (req, res) => {
 
         return res.status(201).json(usuario)
     } catch (error) {
-        console.error(message);
+        console.log(error.message);
         return res.status(500).json({ mensagem: 'Erro interno do servidor' });
     }
 }
@@ -61,16 +61,18 @@ const login = async (req, res) => {
             return res.status(400).json({ mensagem: 'Usuário e/ou senha inválido(s).' });
         };
 
-        const token = jwt.sign({ id: usuario.id }, senhaJwt, { expiresIn: '1h' });
+        const token = jwt.sign({ id: usuario.id }, senhaJwt, { expiresIn: '8h' });
 
         return res.json({ usuario, token })
     } catch (error) {
-        console.error(message);
+        console.log(error.message);
         return res.status(500).json({ mensagem: 'Erro interno do servidor' });
     };
 }
 
 const detalharUsuario = async (req, res) => {
+    const { authorization } = req.headers;
+
     if (!authorization) {
         return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
     };
@@ -107,20 +109,16 @@ const atualizarUsuario = async (req, res) => {
 
         const senhaCriptografada = await bcrypt.hash(senha, 10);
 
-        const queryAtualizarUsuario = 'update usuarios set nome = $1 and email = $2 and senha = $3 where id = $4';
+        const queryAtualizarUsuario = 'update usuarios set nome = $1, email = $2, senha = $3 where id = $4';
 
         await pool.query(queryAtualizarUsuario, [nome, email, senhaCriptografada, id]);
 
         return res.status(204).send();
     } catch (error) {
-        console.error(message);
+        console.log(error.message);
         return res.status(500).json({ mensagem: 'Erro interno do servidor' });
     }
 }
-
-
-
-
 
 module.exports = {
     cadastrarUsuario,
