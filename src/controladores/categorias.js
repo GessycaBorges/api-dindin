@@ -1,7 +1,4 @@
-const bcrypt = require('bcrypt');
 const pool = require('../conexao');
-const senhaJwt = require('../senhaJwt');
-const jwt = require('jsonwebtoken');
 
 const listarCategorias = async (req, res) => {
     const { authorization } = req.headers;
