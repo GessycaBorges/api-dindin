@@ -120,21 +120,105 @@ const cadastrarTransacao = async (req, res) => {
 }
 
 const atualizarTransacao = async (req, res) => {
+    const { authorization } = req.headers;
+    //Id da transação deverá ser enviado no parâmetro da rota
+    const { id } = req.params;
+    const { tipo, descricao, valor, data, categoria_id } = req.body;
 
+    //Validar se o token foi enviado
+    if (!authorization) {
+        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
+    };
+
+    //Validar os campos obrigatórios
+    if (!tipo || !descricao || !valor || !data || !categoria_id) {
+        return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
+    }
+
+    try {
+        //Validar se existe transação para esse id e se pertence ao usuario_ID (token)
+        const categoriaExiste = await pool.query(
+            'select * from categorias where id = $1',
+            [categoria_id]
+        );
+
+        if (categoriaExiste.rowCount < 1) {
+            return res.status(400).json({ mensagem: 'Categoria não encontrada' })
+        };
+
+        //Validar se o tipo é “entrada” ou “saida” no body -- coloquei dois ifs, pq se for entrada ou saída ele passa
+        if (tipo !== "entrada"){
+            if (tipo !== "saida"){
+                return res.status(400).json({ mensagem: 'Tipo de transação inválido' })
+            }
+        }
+
+        //Atualizar transação
+        const queryAtualizarTransacao = `
+        update transacoes
+        set tipo = $1, descricao = $2, valor = $3, data = $4, categoria_id = $5
+        where id = $6`;
+
+        await pool.query(queryAtualizarTransacao, [tipo, descricao, valor, data, categoria_id, id]);
+
+        return res.status(204).send();
+
+    } catch (error) {
+        console.log(error.message);
+        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+    }
 }
 
 const excluirTransacao = async (req, res) => {
+    const { authorization } = req.headers;
+    //Id da transação deverá ser enviado no parâmetro da rota
+    const { id } = req.params;
+    
+    //Validar se o token foi enviado
+    if (!authorization) {
+        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
+    };
 
+
+	try {
+        //Validar se existe transação para esse id e se pertence ao usuario_ID (token)
+		const transacaoExiste = await pool.query(
+			'select * from transacoes where id = $1',
+			[id]
+		)
+
+		if (transacaoExiste < 1) {
+			return res.status(404).json({ mensagem: 'Transação não encontrada.' })
+		}
+
+        //Excluir transação
+		await pool.query('delete from transacoes where id = $1', [id])
+
+		return res.status(204).send()
+	} catch (error) {
+		return res.status(500).json('Erro interno do servidor')
+	}
 }
 
 const obterExtrato = async (req, res) => {
     const { authorization } = req.headers;
 
+    //Validar se o token foi enviado
     if (!authorization) {
         return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
     };
 
     try {
+        //Listar todas as transações
+        const obterEntrada = await pool.query("select sum(valor) from transacoes where tipo = 'entrada';")
+        const obterSaida = await pool.query("select sum(valor) from transacoes where tipo = 'saida';")
+
+        //Retornar a soma de todas as entradas e todas as saídas;
+        const extrato = {
+            entrada: obterEntrada.rows[0].sum,
+            saida: obterSaida.rows[0].sum
+        }
+        return res.json(extrato)
         
     } catch (error) {
         console.log(error.message);
