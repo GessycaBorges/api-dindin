@@ -1,16 +1,20 @@
+const { autenticarUsuario, validarDadosUsuario, validarDadosLogin } = require('../utilidades/funcoes');
+const { emailExiste } = require('../servicos/querys');
+
 const bcrypt = require('bcrypt');
 const pool = require('../conexao');
 const senhaJwt = require('../senhaJwt');
 const jwt = require('jsonwebtoken');
 
+//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiaWF0IjoxNjk1MzQ5MTYyLCJleHAiOjE2OTUzNzc5NjJ9.RFkbU3TmtaEPEbthAEnuogJ2M-WvxRaqPKMVHMDQudg
+
+
 const cadastrarUsuario = async (req, res) => {
-    const { nome, email, senha } = req.body;
-
-    if (!nome || !email || !senha) {
-        return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
-    }
-
     try {
+        const { nome, email, senha } = await validarDadosUsuario(req, res);
+
+        // await emailExiste(email, res);
+
         const emailExiste = await pool.query(
             'select * from usuarios where email = $1',
             [email]
@@ -37,11 +41,7 @@ const cadastrarUsuario = async (req, res) => {
 }
 
 const login = async (req, res) => {
-    const { email, senha } = req.body;
-
-    if (!email || !senha) {
-        return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
-    }
+    const { email, senha } = await validarDadosLogin(req, res)
 
     try {
         const { rows, rowCount } = await pool.query(
@@ -71,22 +71,15 @@ const login = async (req, res) => {
 }
 
 const detalharUsuario = async (req, res) => {
-    const { authorization } = req.headers;
-
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
+    await autenticarUsuario(req, res);
 
     return res.json(req.usuario);
 }
 
 const atualizarUsuario = async (req, res) => {
-    const { nome, email, senha } = req.body;
     const { id } = req.usuario;
 
-    if (!nome || !email || !senha) {
-        return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
-    }
+    const { nome, email, senha } = await validarDadosUsuario(req, res);
 
     try {
         const { rowCount } = await pool.query(
@@ -99,8 +92,8 @@ const atualizarUsuario = async (req, res) => {
         };
 
         const emailExiste = await pool.query(
-            'select * from usuarios where email = $1',
-            [email]
+            'select * from usuarios where email = $1 and id != $2',
+            [email, id]
         );
 
         if (emailExiste.rowCount > 0) {

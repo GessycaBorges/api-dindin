@@ -93,4 +93,4 @@ As seguintes ferramentas foram usadas na construção do projeto:
 
 ---
 
-Feito com ❤️ por Géssyca e **[Juliana](https://www.linkedin.com/in/juliana-toguti/)**
+Feito com ❤️ por **[Gessyca](https://www.linkedin.com/in/gessycaborges/)** e **[Juliana](https://www.linkedin.com/in/juliana-toguti/)**

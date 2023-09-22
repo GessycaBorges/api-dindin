@@ -1,21 +1,14 @@
-const pool = require('../conexao');
+const { selecionarCategorias } = require('../servicos/querys');
+const { autenticarUsuario } = require('../utilidades/funcoes');
+const mensagemErro = require('../servicos/mensagens');
 
 const listarCategorias = async (req, res) => {
-    const { authorization } = req.headers;
-
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
+    await autenticarUsuario(req, res);
 
     try {
-        const { rows } = await pool.query(
-            'select * from categorias'
-        );
-
-        return res.json(rows);
+        await selecionarCategorias(req, res);
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        return res.status(500).json(mensagemErro[0]);
     }
 }
 

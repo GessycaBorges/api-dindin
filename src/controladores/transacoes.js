@@ -1,11 +1,8 @@
 const pool = require('../conexao');
+const { autenticarUsuario } = require('../utilidades/funcoes');
 
 const listarTransacoes = async (req, res) => {
-    const { authorization } = req.headers;
-
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
+    autenticarUsuario(req, res);
 
     try {
         const query = `
@@ -28,11 +25,7 @@ const listarTransacoes = async (req, res) => {
 };
 
 const detalharTransacao = async (req, res) => {
-    const { authorization } = req.headers;
-
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
+    autenticarUsuario(req, res);
 
     const { id } = req.params;
 
@@ -59,12 +52,9 @@ const detalharTransacao = async (req, res) => {
 }
 
 const cadastrarTransacao = async (req, res) => {
-    const { authorization } = req.headers;
     const { tipo, descricao, valor, data, categoria_id } = req.body;
 
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
+    autenticarUsuario(req, res);
 
     if (!tipo || !descricao || !valor || !data || !categoria_id) {
         return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
@@ -74,7 +64,7 @@ const cadastrarTransacao = async (req, res) => {
         const categoriaExiste = await pool.query(
             'select * from categorias where id = $1',
             [categoria_id]
-        ); // estava puxando de transações e retornando que não existe. Troquei para categorias
+        );
 
         if (categoriaExiste.rowCount < 1) {
             return res.status(400).json({ mensagem: 'Categoria não encontrada' })
@@ -118,23 +108,16 @@ const cadastrarTransacao = async (req, res) => {
 }
 
 const atualizarTransacao = async (req, res) => {
-    const { authorization } = req.headers;
-    //Id da transação deverá ser enviado no parâmetro da rota
     const { id } = req.params;
     const { tipo, descricao, valor, data, categoria_id } = req.body;
 
-    //Validar se o token foi enviado
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
+    autenticarUsuario(req, res);
 
-    //Validar os campos obrigatórios
     if (!tipo || !descricao || !valor || !data || !categoria_id) {
         return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
     }
 
     try {
-        //Validar se existe transação para esse id e se pertence ao usuario_ID (token)
         const categoriaExiste = await pool.query(
             'select * from categorias where id = $1',
             [categoria_id]
@@ -144,7 +127,6 @@ const atualizarTransacao = async (req, res) => {
             return res.status(400).json({ mensagem: 'Categoria não encontrada' })
         };
 
-        //Validar se o tipo é “entrada” ou “saida” no body -- coloquei dois ifs, pq se for entrada ou saída ele passa
         if (tipo !== "entrada") {
             if (tipo !== "saida") {
                 return res.status(400).json({ mensagem: 'Tipo de transação inválido' })
@@ -168,18 +150,11 @@ const atualizarTransacao = async (req, res) => {
 }
 
 const excluirTransacao = async (req, res) => {
-    const { authorization } = req.headers;
-    //Id da transação deverá ser enviado no parâmetro da rota
     const { id } = req.params;
 
-    //Validar se o token foi enviado
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
-
+    autenticarUsuario(req, res);
 
     try {
-        //Validar se existe transação para esse id e se pertence ao usuario_ID (token)
         const transacaoExiste = await pool.query(
             'select * from transacoes where id = $1',
             [id]
@@ -189,7 +164,6 @@ const excluirTransacao = async (req, res) => {
             return res.status(404).json({ mensagem: 'Transação não encontrada.' })
         }
 
-        //Excluir transação
         await pool.query('delete from transacoes where id = $1', [id])
 
         return res.status(204).send()
@@ -199,27 +173,33 @@ const excluirTransacao = async (req, res) => {
 }
 
 const obterExtrato = async (req, res) => {
-    const { authorization } = req.headers;
-    const { id } = req.usuario.id;
-    //Validar se o token foi enviado
-    if (!authorization) {
-        return res.status(401).json({ mensagem: 'Para acessar este recurso um token de autenticação válido deve ser enviado.' });
-    };
+    const { id } = req.usuario;
+
+    autenticarUsuario(req, res);
 
     try {
-        //Listar todas as transações
-        const obterEntrada = await pool.query('select sum(valor) from transacoes where tipo = $1 and usuario_id = $2', ['entrada', id]);
-        const obterSaida = await pool.query('select sum(valor) from transacoes where tipo = $3 and usuario_id = $4', ['saida', id]);
+        const obterEntrada = await pool.query(`
+        select sum(valor) from transacoes where tipo = 'entrada' and usuario_id = $1`,
+            [id]);
+        const obterSaida = await pool.query(`
+        select sum(valor) from transacoes where tipo = 'saida' and usuario_id = $1`,
+            [id]);
 
-        console.log(id);
-        console.log(obterEntrada);
-        console.log(obterSaida);
+        console.log(obterEntrada.rows[0])
 
+        let valorDeEntrada = obterEntrada.rows[0].sum
+        if (!valorDeEntrada) {
+            valorDeEntrada = '0';
+        }
 
-        //Retornar a soma de todas as entradas e todas as saídas;
+        let valorDeSaida = obterSaida.rows[0].sum
+        if (!valorDeSaida) {
+            valorDeSaida = '0';
+        }
+
         const extrato = {
-            entrada: obterEntrada.rows[0].sum,
-            saida: obterSaida.rows[0].sum
+            entrada: valorDeEntrada,
+            saida: valorDeSaida
         }
         return res.json(extrato)
 
