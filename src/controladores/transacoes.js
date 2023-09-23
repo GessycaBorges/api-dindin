@@ -11,15 +11,14 @@ const {
     obterTransacoes
 } = require('../servicos/querys');
 const { exibirTransacaoCadastrada, verificarDados } = require('../utilidades/funcoes-transacoes');
-const { autenticarUsuario } = require('../utilidades/funcoes-usuarios');
+
+//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTAsImlhdCI6MTY5NTQ5NjI4NiwiZXhwIjoxNjk1NTI1MDg2fQ.Y__DSapocSkxKdBKFpg6OpS3YNbw8iymA3kS3nqTI3A
 
 const listarTransacoes = async (req, res) => {
-    autenticarUsuario(req, res);
-    // PROBLEMA COM O ERRO DE AUTENTICACAO
 
     try {
         const rows = await buscarTransacoes(req);
-        
+
         return res.json(rows);
     } catch (error) {
         return res.status(500).json(erroServidor);
@@ -27,13 +26,11 @@ const listarTransacoes = async (req, res) => {
 };
 
 const detalharTransacao = async (req, res) => {
-    autenticarUsuario(req, res);
-    // PROBLEMA COM O ERRO DE AUTENTICACAO
 
     const { id } = req.params;
 
     try {
-        const {rows, rowCount} = await transacaoDetalhada (req, id);
+        const { rows, rowCount } = await transacaoDetalhada(req, id);
 
         if (rowCount < 1) {
             return res.status(404).json(erroTransacao[0]);
@@ -47,8 +44,6 @@ const detalharTransacao = async (req, res) => {
 
 const cadastrarTransacao = async (req, res) => {
     const { tipo, descricao, valor, data, categoria_id } = req.body;
-    autenticarUsuario(req, res);
-    // PROBLEMA COM O ERRO DE AUTENTICACAO
 
     const dadosNaoInformados = verificarDados(tipo, descricao, valor, data, categoria_id);
 
@@ -65,14 +60,14 @@ const cadastrarTransacao = async (req, res) => {
 
         if (tipo !== "entrada") {
             if (tipo !== "saida") {
-            return res.status(400).json(erroTransacao[2]);
+                return res.status(400).json(erroTransacao[2]);
             };
-        }; 
+        };
 
-        const { rows } = await transacaoCadastrada (tipo, descricao, valor, data, categoria_id, req);
-        
+        const { rows } = await transacaoCadastrada(tipo, descricao, valor, data, categoria_id, req);
+
         const categoria = await verificarCategoria(categoria_id);
-        
+
         const novaTransacao = await exibirTransacaoCadastrada(rows, categoria);
 
         return res.status(201).json(novaTransacao);
@@ -85,8 +80,6 @@ const atualizarTransacao = async (req, res) => {
     const { id } = req.params;
     const { tipo, descricao, valor, data, categoria_id } = req.body;
 
-    autenticarUsuario(req, res);
-
     const dadosNaoInformados = verificarDados(tipo, descricao, valor, data, categoria_id);
 
     if (dadosNaoInformados) {
@@ -102,9 +95,9 @@ const atualizarTransacao = async (req, res) => {
 
         if (tipo !== "entrada") {
             if (tipo !== "saida") {
-            return res.status(400).json(erroTransacao[2]);
+                return res.status(400).json(erroTransacao[2]);
             };
-        }; 
+        };
 
         await transacaoAtualizada(tipo, descricao, valor, data, categoria_id, id);
 
@@ -117,8 +110,6 @@ const atualizarTransacao = async (req, res) => {
 
 const excluirTransacao = async (req, res) => {
     const { id } = req.params;
-
-    autenticarUsuario(req, res);
 
     try {
         const transacaoExiste = await verificarTransacao(id);
@@ -138,8 +129,6 @@ const excluirTransacao = async (req, res) => {
 const obterExtrato = async (req, res) => {
     const { id } = req.usuario;
 
-    autenticarUsuario(req, res);
-
     try {
         const { obterEntrada, obterSaida } = await obterTransacoes(id);
 
@@ -147,7 +136,7 @@ const obterExtrato = async (req, res) => {
 
         return res.json(extrato);
     } catch (error) {
-        console.log (error.message)
+        console.log(error.message)
         return res.status(500).json(erroServidor);
     }
 }

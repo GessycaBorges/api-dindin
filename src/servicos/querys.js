@@ -9,16 +9,12 @@ const selecionarCategorias = async (req, res) => {
     return res.json(rows);
 }
 
-const selecionarUsuariosId = async (id, res) => {
+const selecionarUsuariosId = async (id) => {
     const { rows, rowCount } = await pool.query(
         'select * from usuarios where id = $1', [id]
     );
 
-    if (rowCount < 1) {
-        return res.status(401).json(erroAutenticacao[1]);
-    };
-
-    return rows;
+    return { rows, rowCount };
 }
 
 const emailExiste = async (email) => {
@@ -44,7 +40,7 @@ const novoUsuario = async (nome, email, senhaCriptografada) => {
 //Alterações a partir daqui
 const buscarTransacoes = async (req) => {
     const query =
-    `
+        `
         select t.id, t.tipo, t.descricao, t.valor, t.data,
         t.usuario_id, t.categoria_id, c.descricao as categoria_nome
         from transacoes t left join categorias c 
@@ -59,7 +55,7 @@ const buscarTransacoes = async (req) => {
 
 const transacaoDetalhada = async (req, id) => {
     const { rows, rowCount } = await pool.query(
-    `
+        `
         select t.id, t.tipo, t.descricao, t.valor, t.data,
         t.usuario_id, t.categoria_id, c.descricao as categoria_nome
         from transacoes t left join categorias c 
@@ -92,10 +88,10 @@ const verificarTransacao = async (id) => {
 
 const transacaoCadastrada = async (tipo, descricao, valor, data, categoria_id, req) => {
     const { rows } = await pool.query(
-    `
+        `
         insert into transacoes (tipo, descricao, valor, data, categoria_id, usuario_id)
         values ($1, $2, $3, $4, $5, $6) returning *`
-    ,
+        ,
         [tipo, descricao, valor, data, categoria_id, req.usuario.id]
     );
 
@@ -104,12 +100,12 @@ const transacaoCadastrada = async (tipo, descricao, valor, data, categoria_id, r
 
 const transacaoAtualizada = async (tipo, descricao, valor, data, categoria_id, id) => {
     await pool.query(
-    `
+        `
         update transacoes
         set tipo = $1, descricao = $2, valor = $3, data = $4, categoria_id = $5
         where id = $6`
-    ,
-    [tipo, descricao, valor, data, categoria_id, id]
+        ,
+        [tipo, descricao, valor, data, categoria_id, id]
     );
 }
 
@@ -119,16 +115,16 @@ const transacaoExcluida = async (id) => {
 
 const obterTransacoes = async (id) => {
     const obterEntrada = await pool.query(
-    `
+        `
         select sum(valor) from transacoes where tipo = 'entrada' and usuario_id = $1`
-    ,
+        ,
         [id]
     );
 
     const obterSaida = await pool.query(
-    `
+        `
         select sum(valor) from transacoes where tipo = 'saida' and usuario_id = $1`
-    ,
+        ,
         [id]
     );
 

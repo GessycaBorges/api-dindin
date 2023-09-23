@@ -1,4 +1,4 @@
-const { autenticarUsuario, validarDadosUsuario, validarDadosLogin, criarToken } = require('../utilidades/funcoes-usuarios');
+const { validarEmail, criarToken } = require('../utilidades/funcoes-usuarios');
 const { emailExiste, novoUsuario } = require('../servicos/querys');
 const {
     erroServidor,
@@ -11,26 +11,28 @@ const senhaJwt = require('../senhaJwt');
 const jwt = require('jsonwebtoken');
 
 const cadastrarUsuario = async (req, res) => {
+    const { nome, email, senha } = req.body;
+
+    if (!nome || !email || !senha) {
+        return res.status(400).json(erroValidacaoDados[0]);
+    }
+
+    const emailVerificado = await validarEmail(email);
+
+    if (nome.length < 3 || senha.length < 6 || !emailVerificado) {
+        return res.status(400).json(erroValidacaoDados[2]);
+    }
+
     try {
-        const validacao = await validarDadosUsuario(req);
-
-        if (validacao.dadosNaoInformados){
-            return res.status(400).json(erroValidacaoDados[0]);
-        }
-
-        if (validacao.dadosIncompletos || !validacao.emailVerificado){
-            return res.status(400).json(erroValidacaoDados[2]);
-        }
-
-        const { rowCount } = await emailExiste(validacao.emailVerificado, res);
+        const { rowCount } = await emailExiste(emailVerificado, res);
 
         if (rowCount > 0) {
             return res.status(400).json(erroValidacaoDados[1])
         };
 
-        const senhaCriptografada = await bcrypt.hash(validacao.senha, 10);
+        const senhaCriptografada = await bcrypt.hash(senha, 10);
 
-        const usuario = await novoUsuario(validacao.nome, validacao.emailVerificado, senhaCriptografada);
+        const usuario = await novoUsuario(nome, emailVerificado, senhaCriptografada);
 
         return res.status(201).json(usuario);
     } catch (error) {
@@ -39,27 +41,26 @@ const cadastrarUsuario = async (req, res) => {
 }
 
 const login = async (req, res) => {
-    //PROBLEMA NOS ERROS
+    const { email, senha } = req.body;
+
+    if (!email || !senha) {
+        return res.status(400).json(erroValidacaoDados[0]);
+    }
+
     try {
-        const validacao = await validarDadosLogin(req)
-
-        if (validacao.dadosNaoInformados === true){
-            return res.status(400).json(erroValidacaoDados[0]);
-        }
-
-        const { rowCount, rows } = await emailExiste(validacao.email, res);
+        const { rowCount, rows } = await emailExiste(email);
 
         if (rowCount < 1) {
             return res.status(400).json(erroValidacaoDados[2]);
         };
-     
-        const validacaoToken = await criarToken(rows, validacao.senha);
+
+        const validacaoToken = await criarToken(rows, senha);
 
         if (!validacaoToken) {
             return res.status(400).json(erroValidacaoDados[2]);
         };
 
-        return res.json({ usuario: validacaoToken.usuario, token: validacaoToken.token })
+        return res.json({ usuario: validacaoToken.usuario, token: validacaoToken.token });
     } catch (error) {
         return res.status(500).json(erroServidor);
     };
@@ -67,8 +68,6 @@ const login = async (req, res) => {
 
 const detalharUsuario = async (req, res) => {
     try {
-        //await autenticarUsuario(req, res);
-
         return res.json(req.usuario);
     } catch (error) {
         return res.status(500).json(erroServidor);
