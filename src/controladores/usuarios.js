@@ -1,79 +1,78 @@
-const { autenticarUsuario, validarDadosUsuario, validarDadosLogin } = require('../utilidades/funcoes');
-const { emailExiste } = require('../servicos/querys');
-
+const { autenticarUsuario, validarDadosUsuario, validarDadosLogin, criarToken } = require('../utilidades/funcoes');
+const { emailExiste, novoUsuario } = require('../servicos/querys');
+const {
+    erroServidor,
+    erroAutenticacao,
+    erroValidacaoDados
+} = require('../servicos/mensagens');
 const bcrypt = require('bcrypt');
 const pool = require('../conexao');
 const senhaJwt = require('../senhaJwt');
 const jwt = require('jsonwebtoken');
 
-//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwiaWF0IjoxNjk1MzQ5MTYyLCJleHAiOjE2OTUzNzc5NjJ9.RFkbU3TmtaEPEbthAEnuogJ2M-WvxRaqPKMVHMDQudg
-
-
 const cadastrarUsuario = async (req, res) => {
     try {
-        const { nome, email, senha } = await validarDadosUsuario(req, res);
+        const validacao = await validarDadosUsuario(req);
 
-        // await emailExiste(email, res);
+        if (validacao.dadosNaoInformados){
+            return res.status(400).json(erroValidacaoDados[0]);
+        }
 
-        const emailExiste = await pool.query(
-            'select * from usuarios where email = $1',
-            [email]
-        );
+        if (validacao.dadosIncompletos || !validacao.emailVerificado){
+            return res.status(400).json(erroValidacaoDados[2]);
+        }
 
-        if (emailExiste.rowCount > 0) {
-            return res.status(400).json({ mensagem: 'Já existe usuário cadastrado com o e-mail informado' })
+        const { rowCount } = await emailExiste(validacao.emailVerificado, res);
+
+        if (rowCount > 0) {
+            return res.status(400).json(erroValidacaoDados[1])
         };
 
-        const senhaCriptografada = await bcrypt.hash(senha, 10);
+        const senhaCriptografada = await bcrypt.hash(validacao.senha, 10);
 
-        const novoUsuario = await pool.query(
-            'insert into usuarios (nome, email, senha) values ($1, $2, $3) returning *',
-            [nome, email, senhaCriptografada]
-        );
+        const usuario = await novoUsuario(validacao.nome, validacao.emailVerificado, senhaCriptografada);
 
-        const { senha: _, ...usuario } = novoUsuario.rows[0];
-
-        return res.status(201).json(usuario)
+        return res.status(201).json(usuario);
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        return res.status(500).json(erroServidor);
     }
 }
 
 const login = async (req, res) => {
-    const { email, senha } = await validarDadosLogin(req, res)
-
+    //PROBLEMA NOS ERROS
     try {
-        const { rows, rowCount } = await pool.query(
-            'select * from usuarios where email = $1',
-            [email]
-        ); // Desestruturação para puxar do banco a linha com a informação e a quantidade de linhas
+        const validacao = await validarDadosLogin(req)
+
+        if (validacao.dadosNaoInformados === true){
+            return res.status(400).json(erroValidacaoDados[0]);
+        }
+
+        const { rowCount, rows } = await emailExiste(validacao.email, res);
 
         if (rowCount < 1) {
-            return res.status(400).json({ mensagem: 'Usuário e/ou senha inválido(s).' });
+            return res.status(400).json(erroValidacaoDados[2]);
+        };
+     
+        const validacaoToken = await criarToken(rows, validacao.senha);
+
+        if (!validacaoToken) {
+            return res.status(400).json(erroValidacaoDados[2]);
         };
 
-        const { senha: senhaUsuario, ...usuario } = rows[0]; // Desestruturação para pegar do banco o hash da senha criptografada e o spread operator
-
-        const senhaValida = await bcrypt.compare(senha, senhaUsuario);
-
-        if (!senhaValida) {
-            return res.status(400).json({ mensagem: 'Usuário e/ou senha inválido(s).' });
-        };
-
-        const token = jwt.sign({ id: usuario.id }, senhaJwt, { expiresIn: '8h' });
-
-        return res.json({ usuario, token })
+        return res.json({ usuario: validacaoToken.usuario, token: validacaoToken.token })
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        return res.status(500).json(erroServidor);
     };
 }
 
 const detalharUsuario = async (req, res) => {
-    await autenticarUsuario(req, res);
+    try {
+        //await autenticarUsuario(req, res);
 
-    return res.json(req.usuario);
+        return res.json(req.usuario);
+    } catch (error) {
+        return res.status(500).json(erroServidor);
+    }
 }
 
 const atualizarUsuario = async (req, res) => {

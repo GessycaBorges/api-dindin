@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const senhaJwt = require('../senhaJwt');
-const mensagemErro = require('../servicos/mensagens');
+const erroAutenticacao = require('../servicos/mensagens');
 const { selecionarUsuariosId } = require('../servicos/querys');
 
 
@@ -21,7 +21,7 @@ const verificarUsuarioLogado = async (req, res, next) => {
         next();
 
     } catch (error) {
-        return res.status(401).json(mensagemErro[2]);
+        return res.status(401).json(erroAutenticacao[0]);
     };
 }
 

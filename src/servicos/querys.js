@@ -1,5 +1,5 @@
 const pool = require('../conexao');
-const mensagemErro = require('../servicos/mensagens');
+const { erroAutenticacao } = require('../servicos/mensagens');
 
 const selecionarCategorias = async (req, res) => {
     const { rows } = await pool.query(
@@ -15,27 +15,35 @@ const selecionarUsuariosId = async (id, res) => {
     );
 
     if (rowCount < 1) {
-        return res.status(401).json(mensagemErro[2]);
+        return res.status(401).json(erroAutenticacao[1]);
     };
 
     return rows;
 }
 
-const emailExiste = async (email, res) => {
-    const { rowCount } = await pool.query(
+const emailExiste = async (email) => {
+    const emailExiste = await pool.query(
         'select * from usuarios where email = $1',
         [email]
     );
 
-    if (rowCount > 0) {
-        return res.status(400).json(mensagemErro[4])
-    };
+    return emailExiste;
+}
 
-    return email;
+const novoUsuario = async (nome, email, senhaCriptografada) => {
+    const novoUsuario = await pool.query(
+        'insert into usuarios (nome, email, senha) values ($1, $2, $3) returning *',
+        [nome, email, senhaCriptografada]
+    );
+
+    const { senha: _, ...usuario } = novoUsuario.rows[0];
+
+    return usuario;
 }
 
 module.exports = {
     selecionarCategorias,
     selecionarUsuariosId,
-    emailExiste
+    emailExiste,
+    novoUsuario
 }
