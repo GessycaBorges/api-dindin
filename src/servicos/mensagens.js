@@ -11,8 +11,15 @@ const erroValidacaoDados = [
     { mensagem: 'Dados inválidos' }
 ]
 
+const erroTransacao = [
+    { mensagem: 'Transação não encontrada.' },
+    { mensagem: 'Categoria não encontrada.' },
+    { mensagem: 'Tipo de transação inválido' }
+]
+
 module.exports = {
     erroServidor,
     erroAutenticacao,
-    erroValidacaoDados
+    erroValidacaoDados,
+    erroTransacao
 }

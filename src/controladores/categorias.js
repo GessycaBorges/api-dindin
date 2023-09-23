@@ -1,5 +1,5 @@
 const { selecionarCategorias } = require('../servicos/querys');
-const { autenticarUsuario } = require('../utilidades/funcoes');
+const { autenticarUsuario } = require('../utilidades/funcoes-usuarios');
 const mensagemErro = require('../servicos/mensagens');
 
 const listarCategorias = async (req, res) => {

@@ -1,4 +1,4 @@
-const { autenticarUsuario, validarDadosUsuario, validarDadosLogin, criarToken } = require('../utilidades/funcoes');
+const { autenticarUsuario, validarDadosUsuario, validarDadosLogin, criarToken } = require('../utilidades/funcoes-usuarios');
 const { emailExiste, novoUsuario } = require('../servicos/querys');
 const {
     erroServidor,

@@ -1,109 +1,83 @@
 const pool = require('../conexao');
-const { autenticarUsuario } = require('../utilidades/funcoes');
+const { erroTransacao, erroServidor, erroValidacaoDados } = require('../servicos/mensagens');
+const {
+    buscarTransacoes,
+    transacaoDetalhada,
+    verificarCategoria,
+    verificarTransacao,
+    transacaoCadastrada,
+    transacaoAtualizada,
+    transacaoExcluida,
+    obterTransacoes
+} = require('../servicos/querys');
+const { exibirTransacaoCadastrada, verificarDados } = require('../utilidades/funcoes-transacoes');
+const { autenticarUsuario } = require('../utilidades/funcoes-usuarios');
 
 const listarTransacoes = async (req, res) => {
     autenticarUsuario(req, res);
+    // PROBLEMA COM O ERRO DE AUTENTICACAO
 
     try {
-        const query = `
-        select t.id, t.tipo, t.descricao, t.valor, t.data,
-        t.usuario_id, t.categoria_id, c.descricao as categoria_nome
-        from transacoes t left join categorias c 
-        on t.categoria_id = c.id
-        where t.usuario_id = $1
-        `
-
-        const { rows } = await pool.query(query, [req.usuario.id]);
-
+        const rows = await buscarTransacoes(req);
+        
         return res.json(rows);
-
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        return res.status(500).json(erroServidor);
     }
-
 };
 
 const detalharTransacao = async (req, res) => {
     autenticarUsuario(req, res);
+    // PROBLEMA COM O ERRO DE AUTENTICACAO
 
     const { id } = req.params;
 
     try {
-        const { rows, rowCount } = await pool.query(`
-        select t.id, t.tipo, t.descricao, t.valor, t.data,
-        t.usuario_id, t.categoria_id, c.descricao as categoria_nome
-        from transacoes t left join categorias c 
-        on t.categoria_id = c.id
-        where t.id = $1 and t.usuario_id = $2;
-        `,
-            [id, req.usuario.id]
-        );
+        const {rows, rowCount} = await transacaoDetalhada (req, id);
 
         if (rowCount < 1) {
-            return res.status(404).json({ mensagem: 'Transação não encontrada.' })
+            return res.status(404).json(erroTransacao[0]);
         };
 
         return res.json(rows[0]);
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        return res.status(500).json(erroServidor);
     }
 }
 
 const cadastrarTransacao = async (req, res) => {
     const { tipo, descricao, valor, data, categoria_id } = req.body;
-
     autenticarUsuario(req, res);
+    // PROBLEMA COM O ERRO DE AUTENTICACAO
 
-    if (!tipo || !descricao || !valor || !data || !categoria_id) {
-        return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
+    const dadosNaoInformados = verificarDados(tipo, descricao, valor, data, categoria_id);
+
+    if (dadosNaoInformados) {
+        return res.status(400).json(erroValidacaoDados[0]);
     }
 
     try {
-        const categoriaExiste = await pool.query(
-            'select * from categorias where id = $1',
-            [categoria_id]
-        );
+        const categoriaExiste = await verificarCategoria(categoria_id);
 
         if (categoriaExiste.rowCount < 1) {
-            return res.status(400).json({ mensagem: 'Categoria não encontrada' })
+            return res.status(400).json(erroTransacao[1]);
         };
 
-        if (tipo === "entrada" || tipo === "saida") {
-            const { rows } = await pool.query(`
-            insert into transacoes (tipo, descricao, valor, data, categoria_id, usuario_id)
-            values ($1, $2, $3, $4, $5, $6) returning *`,
-                [tipo, descricao, valor, data, categoria_id, req.usuario.id]
-            );
+        if (tipo !== "entrada") {
+            if (tipo !== "saida") {
+            return res.status(400).json(erroTransacao[2]);
+            };
+        }; 
 
-            const categoria = await pool.query(`
-            select descricao from categorias where id = $1
-            `, [categoria_id])
+        const { rows } = await transacaoCadastrada (tipo, descricao, valor, data, categoria_id, req);
+        
+        const categoria = await verificarCategoria(categoria_id);
+        
+        const novaTransacao = await exibirTransacaoCadastrada(rows, categoria);
 
-
-            const novaTransacao = rows.map(transacao => {
-                const { id, tipo, descricao, valor, data, usuario_id, categoria_id } = transacao;
-
-                return {
-                    id,
-                    tipo,
-                    descricao,
-                    valor,
-                    data,
-                    usuario_id,
-                    categoria_id,
-                    categoria_nome: categoria.rows[0].descricao
-                }
-            });
-
-            return res.status(201).json(novaTransacao)
-        };
-
-        return res.status(400).json({ mensagem: 'Tipo de transação inválido' })
+        return res.status(201).json(novaTransacao);
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        return res.status(500).json(erroServidor);
     }
 }
 
@@ -113,39 +87,31 @@ const atualizarTransacao = async (req, res) => {
 
     autenticarUsuario(req, res);
 
-    if (!tipo || !descricao || !valor || !data || !categoria_id) {
-        return res.status(400).json({ mensagem: 'Todos os campos são obrigatórios' })
+    const dadosNaoInformados = verificarDados(tipo, descricao, valor, data, categoria_id);
+
+    if (dadosNaoInformados) {
+        return res.status(400).json(erroValidacaoDados[0]);
     }
 
     try {
-        const categoriaExiste = await pool.query(
-            'select * from categorias where id = $1',
-            [categoria_id]
-        );
+        const categoriaExiste = await verificarCategoria(categoria_id);
 
         if (categoriaExiste.rowCount < 1) {
-            return res.status(400).json({ mensagem: 'Categoria não encontrada' })
+            return res.status(400).json(erroTransacao[1]);
         };
 
         if (tipo !== "entrada") {
             if (tipo !== "saida") {
-                return res.status(400).json({ mensagem: 'Tipo de transação inválido' })
-            }
-        }
+            return res.status(400).json(erroTransacao[2]);
+            };
+        }; 
 
-        //Atualizar transação
-        const queryAtualizarTransacao = `
-        update transacoes
-        set tipo = $1, descricao = $2, valor = $3, data = $4, categoria_id = $5
-        where id = $6`;
-
-        await pool.query(queryAtualizarTransacao, [tipo, descricao, valor, data, categoria_id, id]);
+        await transacaoAtualizada(tipo, descricao, valor, data, categoria_id, id);
 
         return res.status(204).send();
 
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        return res.status(500).json(erroServidor);
     }
 }
 
@@ -155,20 +121,17 @@ const excluirTransacao = async (req, res) => {
     autenticarUsuario(req, res);
 
     try {
-        const transacaoExiste = await pool.query(
-            'select * from transacoes where id = $1',
-            [id]
-        )
+        const transacaoExiste = await verificarTransacao(id);
 
-        if (transacaoExiste < 1) {
-            return res.status(404).json({ mensagem: 'Transação não encontrada.' })
-        }
+        if (transacaoExiste.rowCount < 1) {
+            return res.status(400).json(erroTransacao[0]);
+        };
 
-        await pool.query('delete from transacoes where id = $1', [id])
+        await transacaoExcluida(id);
 
-        return res.status(204).send()
+        return res.status(204).send();
     } catch (error) {
-        return res.status(500).json('Erro interno do servidor')
+        return res.status(500).json(erroServidor);
     }
 }
 
@@ -178,34 +141,14 @@ const obterExtrato = async (req, res) => {
     autenticarUsuario(req, res);
 
     try {
-        const obterEntrada = await pool.query(`
-        select sum(valor) from transacoes where tipo = 'entrada' and usuario_id = $1`,
-            [id]);
-        const obterSaida = await pool.query(`
-        select sum(valor) from transacoes where tipo = 'saida' and usuario_id = $1`,
-            [id]);
+        const { obterEntrada, obterSaida } = await obterTransacoes(id);
 
-        console.log(obterEntrada.rows[0])
+        const extrato = await obterExtrato(obterEntrada, obterSaida);
 
-        let valorDeEntrada = obterEntrada.rows[0].sum
-        if (!valorDeEntrada) {
-            valorDeEntrada = '0';
-        }
-
-        let valorDeSaida = obterSaida.rows[0].sum
-        if (!valorDeSaida) {
-            valorDeSaida = '0';
-        }
-
-        const extrato = {
-            entrada: valorDeEntrada,
-            saida: valorDeSaida
-        }
-        return res.json(extrato)
-
+        return res.json(extrato);
     } catch (error) {
-        console.log(error.message);
-        return res.status(500).json({ mensagem: 'Erro interno do servidor' });
+        console.log (error.message)
+        return res.status(500).json(erroServidor);
     }
 }
 

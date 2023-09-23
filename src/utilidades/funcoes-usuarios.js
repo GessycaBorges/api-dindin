@@ -9,13 +9,13 @@ const bcrypt = require('bcrypt');
 const senhaJwt = require('../senhaJwt');
 const jwt = require('jsonwebtoken');
 
-//const autenticarUsuario = async (req, res) => {
-//    const { authorization } = req.headers;
-//   
-//    if (!authorization) {
-//        return res.status(401).json(erroAutenticacao[0]);
-//    };
-//}
+const autenticarUsuario = async (req, res) => {
+    const { authorization } = req.headers;
+   
+    if (!authorization) {
+        return res.status(401).json(erroAutenticacao[0]);
+    };
+}
 
 const validarEmail = (email) => {
     let emailValido = true;
@@ -80,6 +80,7 @@ const criarToken = async (rows, senha ) => {
 
 
 module.exports = {
+    autenticarUsuario,
     validarDadosUsuario,
     validarDadosLogin,
     criarToken
