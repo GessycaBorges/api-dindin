@@ -1,32 +1,28 @@
-const pool = require('../conexao');
 const { erroTransacao, erroServidor, erroValidacaoDados } = require('../servicos/mensagens');
-const {
-    buscarTransacoes,
-    transacaoDetalhada,
-    verificarCategoria,
-    verificarTransacao,
-    transacaoCadastrada,
-    transacaoAtualizada,
-    transacaoExcluida,
-    obterTransacoes
-} = require('../servicos/querys');
-const { exibirTransacaoCadastrada, verificarDados } = require('../utilidades/funcoes-transacoes');
-
-//eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NTAsImlhdCI6MTY5NTQ5NjI4NiwiZXhwIjoxNjk1NTI1MDg2fQ.Y__DSapocSkxKdBKFpg6OpS3YNbw8iymA3kS3nqTI3A
+const { exibirTransacaoCadastrada, verificarDados, consultarExtrato } = require('../utilidades/funcoes-transacoes');
+const { buscarTransacoes, transacaoDetalhada, verificarCategoria, verificarTransacao, transacaoCadastrada, transacaoAtualizada, transacaoExcluida, obterTransacoes, filtroCategorias } = require('../servicos/consultas-transacoes');
 
 const listarTransacoes = async (req, res) => {
+    const { filtro } = req.query;
+    const { id } = req.usuario;
 
     try {
+        if (filtro) {
+            const transacoes = await filtroCategorias(id, filtro);
+
+            return res.json(transacoes);
+        }
+
         const rows = await buscarTransacoes(req);
 
         return res.json(rows);
     } catch (error) {
+        console.log(error.message)
         return res.status(500).json(erroServidor);
-    }
+    };
 };
 
 const detalharTransacao = async (req, res) => {
-
     const { id } = req.params;
 
     try {
@@ -39,8 +35,8 @@ const detalharTransacao = async (req, res) => {
         return res.json(rows[0]);
     } catch (error) {
         return res.status(500).json(erroServidor);
-    }
-}
+    };
+};
 
 const cadastrarTransacao = async (req, res) => {
     const { tipo, descricao, valor, data, categoria_id } = req.body;
@@ -49,7 +45,7 @@ const cadastrarTransacao = async (req, res) => {
 
     if (dadosNaoInformados) {
         return res.status(400).json(erroValidacaoDados[0]);
-    }
+    };
 
     try {
         const categoriaExiste = await verificarCategoria(categoria_id);
@@ -73,8 +69,8 @@ const cadastrarTransacao = async (req, res) => {
         return res.status(201).json(novaTransacao);
     } catch (error) {
         return res.status(500).json(erroServidor);
-    }
-}
+    };
+};
 
 const atualizarTransacao = async (req, res) => {
     const { id } = req.params;
@@ -105,8 +101,8 @@ const atualizarTransacao = async (req, res) => {
 
     } catch (error) {
         return res.status(500).json(erroServidor);
-    }
-}
+    };
+};
 
 const excluirTransacao = async (req, res) => {
     const { id } = req.params;
@@ -123,23 +119,23 @@ const excluirTransacao = async (req, res) => {
         return res.status(204).send();
     } catch (error) {
         return res.status(500).json(erroServidor);
-    }
-}
+    };
+};
 
 const obterExtrato = async (req, res) => {
-    const { id } = req.usuario;
+    const id = req.usuario.id;
 
     try {
         const { obterEntrada, obterSaida } = await obterTransacoes(id);
 
-        const extrato = await obterExtrato(obterEntrada, obterSaida);
+        const extrato = await consultarExtrato(obterEntrada, obterSaida);
 
         return res.json(extrato);
     } catch (error) {
         console.log(error.message)
         return res.status(500).json(erroServidor);
-    }
-}
+    };
+};
 
 module.exports = {
     listarTransacoes,
@@ -148,4 +144,4 @@ module.exports = {
     atualizarTransacao,
     excluirTransacao,
     obterExtrato
-}
+};

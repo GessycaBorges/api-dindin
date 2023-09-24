@@ -1,15 +1,14 @@
-const { selecionarCategorias } = require('../servicos/querys');
-const { autenticarUsuario } = require('../utilidades/funcoes-usuarios');
-const mensagemErro = require('../servicos/mensagens');
+const selecionarCategorias = require('../servicos/consultas-categorias');
+const erroServidor = require('../servicos/mensagens');
 
 const listarCategorias = async (req, res) => {
-    await autenticarUsuario(req, res);
-
     try {
-        await selecionarCategorias(req, res);
+        const { rows } = await selecionarCategorias(req);
+
+        return res.json(rows);
     } catch (error) {
-        return res.status(500).json(mensagemErro[0]);
-    }
-}
+        return res.status(500).json(erroServidor);
+    };
+};
 
 module.exports = listarCategorias;

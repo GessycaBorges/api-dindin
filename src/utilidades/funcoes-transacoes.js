@@ -4,8 +4,9 @@ const verificarDados = (tipo, descricao, valor, data, categoria_id) => {
     if (!tipo || !descricao || !valor || !data || !categoria_id) {
         dadosNaoInformados = true;
     }
+
     return dadosNaoInformados;
-}
+};
 
 const exibirTransacaoCadastrada = async (rows, categoria) => {
     const novaTransacao = rows.map(transacao => {
@@ -20,12 +21,13 @@ const exibirTransacaoCadastrada = async (rows, categoria) => {
             usuario_id,
             categoria_id,
             categoria_nome: categoria.rows[0].descricao
-        }
+        };
     });
-    return novaTransacao;
-}
 
-const obterExtrato = async (obterEntrada, obterSaida) => {
+    return novaTransacao;
+};
+
+const consultarExtrato = async (obterEntrada, obterSaida) => {
     let valorDeEntrada = obterEntrada.rows[0].sum
     if (!valorDeEntrada) {
         valorDeEntrada = '0';
@@ -42,10 +44,10 @@ const obterExtrato = async (obterEntrada, obterSaida) => {
     };
 
     return extrato;
-}
+};
 
 module.exports = {
     verificarDados,
     exibirTransacaoCadastrada,
-    obterExtrato
+    consultarExtrato
 };

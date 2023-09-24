@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const senhaJwt = require('../senhaJwt');
 const { erroServidor, erroAutenticacao } = require('../servicos/mensagens');
-const { selecionarUsuariosId } = require('../servicos/querys');
+const { selecionarUsuariosId } = require('../servicos/consultas-usuarios');
 
 
 const verificarUsuarioLogado = async (req, res, next) => {
@@ -33,7 +33,6 @@ const verificarUsuarioLogado = async (req, res, next) => {
         if (error.message === "invalid token") {
             return res.status(401).json(erroAutenticacao[0]);
         } else {
-            console.log(error.message);
             return res.status(500).json(erroServidor);
         }
     };

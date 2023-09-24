@@ -1,21 +1,6 @@
-const {
-    erroServidor,
-    erroAutenticacao,
-    erroValidacaoDados
-} = require('../servicos/mensagens');
-const pool = require('../conexao');
-
 const bcrypt = require('bcrypt');
 const senhaJwt = require('../senhaJwt');
 const jwt = require('jsonwebtoken');
-
-const autenticarUsuario = async (req, res) => {
-    const { authorization } = req.headers;
-
-    if (!authorization) {
-        return res.status(401).json(erroAutenticacao[0]);
-    };
-}
 
 const validarEmail = (email) => {
     let emailValido = true;
@@ -24,12 +9,12 @@ const validarEmail = (email) => {
         email.lastIndexOf(".") === email.length - 1 || email.trim() === '') {
         emailValido = false;
         return emailValido;
-    }
+    };
 
     if (emailValido) {
-        return email.trim()
-    }
-}
+        return email.trim();
+    };
+};
 
 const criarToken = async (rows, senha) => {
     const { senha: senhaUsuario, ...usuario } = rows[0];
@@ -43,10 +28,9 @@ const criarToken = async (rows, senha) => {
     const token = jwt.sign({ id: usuario.id }, senhaJwt, { expiresIn: '8h' });
 
     return { usuario, token };
-}
+};
 
 module.exports = {
-    autenticarUsuario,
     validarEmail,
     criarToken
-}
+};
