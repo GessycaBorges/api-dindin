@@ -4,11 +4,11 @@
 
 ## Como entregar?
 
-- [ ] Faça o fork desse repositório para o seu GitHub
-- [ ] Clone o seu repositório em sua máquina
-- [ ] Desenvolva seu projeto, fazendo commits a cada alteração e push
-- [ ] Crie um PR (pull request)
-- [ ] Envie o link do pull request que você criou na plataforma da Cubos
+- [X] Faça o fork desse repositório para o seu GitHub
+- [X] Clone o seu repositório em sua máquina
+- [X] Desenvolva seu projeto, fazendo commits a cada alteração e push
+- [X] Crie um PR (pull request)
+- [X] Envie o link do pull request que você criou na plataforma da Cubos
 
 ### ⚠️ Importante: Se o pull request não for criado e enviado na plataforma o feedback não será fornecido e constará como não entregue
 
