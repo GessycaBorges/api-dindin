@@ -17,7 +17,6 @@ const listarTransacoes = async (req, res) => {
 
         return res.json(rows);
     } catch (error) {
-        console.log(error.message)
         return res.status(500).json(erroServidor);
     };
 };
@@ -132,7 +131,6 @@ const obterExtrato = async (req, res) => {
 
         return res.json(extrato);
     } catch (error) {
-        console.log(error.message)
         return res.status(500).json(erroServidor);
     };
 };
