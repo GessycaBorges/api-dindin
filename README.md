@@ -75,7 +75,7 @@ Requisitos para os dados de cadastro:
 - O email precisa ser um e-mail válido e só pode ser cadastrado uma vez;
 - A senha deve conter no mínimo 6 caracteres;
 
-<img src='../ativos/imagens/01 - Cadastrar Usuario.png' width ='1000'>
+<img src='./ativos/imagens/01 - Cadastrar Usuario.png' width ='1000'>
 
 #### 📌Login do usuário
 #### `POST` `/login`
@@ -85,7 +85,7 @@ Requisitos para os dados de cadastro:
 Requisitos para os dados de login:
 - Todos os dados precisam ser informados (email e senha);
 
-<img src='../ativos/imagens/02 - Login Usuario.png' width ='1000'>
+<img src='./ativos/imagens/02 - Login Usuario.png' width ='1000'>
 
 #### ⚠️ATENÇÃO: Todas as funcionalidades (endpoints) a seguir, a partir desse ponto, deverão exigir o token de autenticação do usuário logado, recebendo no header com o formato Bearer Token.
 
@@ -94,7 +94,7 @@ Requisitos para os dados de login:
 
 > Essa é a rota que será chamada quando o usuário quiser obter os dados do seu próprio perfil.
 
-<img src='../ativos/imagens/03 - Detalhar Usuario.png' width ='1000'>
+<img src='./ativos/imagens/03 - Detalhar Usuario.png' width ='1000'>
 
 #### 📌Atualizar usuário
 #### `PUT` `/usuario`
@@ -107,21 +107,21 @@ Requisitos para os dados de atualização:
 - O email precisa ser um e-mail válido e não pode estar cadastrado para outros usuários;
 - A senha deve conter no mínimo 6 caracteres;
 
-<img src='../ativos/imagens/01 - Cadastrar Usuario.png' width ='1000'>
+<img src='./ativos/imagens/01 - Cadastrar Usuario.png' width ='1000'>
 
 #### 📌Listar categorias
 #### `GET` `/categoria`
 
 > Essa é a rota que será chamada quando o usuário logado quiser listar todas as categorias cadastradas.
 
-<img src='../ativos/imagens/05 - Listar Categorias.png' width ='1000'>
+<img src='./ativos/imagens/05 - Listar Categorias.png' width ='1000'>
 
 #### 📌Listar transações do usuário logado
 #### `GET` `/transacao`
 
 > Essa é a rota que será chamada quando o usuário logado quiser listar todas as suas transações cadastradas.
 
-<img src='../ativos/imagens/06 - Listar Transaçoes.png' width ='1000'>
+<img src='./ativos/imagens/06 - Listar Transaçoes.png' width ='1000'>
 
 #### 📌Filtrar transações por categoria
 #### `GET` `/transacao`
@@ -131,14 +131,14 @@ Requisitos para os dados de atualização:
 Requisitos para os filtrar transações:
 - Incluir um parâmetro do tipo query filtro para que seja possível consultar apenas transações das categorias informadas;
 
-<img src='../ativos/imagens/06.1 - Listar Transaçoes com Filtro.png' width ='1000'>
+<img src='./ativos/imagens/06.1 - Listar Transaçoes com Filtro.png' width ='1000'>
 
 #### 📌Detalhar uma transação do usuário logado
 #### `GET` `/transacao/:id`
 
 > Essa é a rota que será chamada quando o usuário logado quiser obter uma das suas transações cadastradas.
 
-<img src='../ativos/imagens/07 - Detalhar Transaçao.png' width ='1000'>
+<img src='./ativos/imagens/07 - Detalhar Transaçao.png' width ='1000'>
 
 
 #### 📌Cadastrar transação para o usuário logado
@@ -150,7 +150,7 @@ Requisitos para cadastro de transação:
 - Todos os dados precisam ser informados (descricao, valor, data, categoria_id e tipo);
 - O tipo deverá ser 'saida' ou 'entrada';
 
-<img src='../ativos/imagens/08 - Cadastrar Transaçao.png' width ='1000'>
+<img src='./ativos/imagens/08 - Cadastrar Transaçao.png' width ='1000'>
 
 #### 📌Atualizar transação do usuário logado
 #### `PUT` `/transacao/:id`
@@ -161,21 +161,21 @@ Requisitos para cadastro de atualização:
 - Todos os dados precisam ser informados (descricao, valor, data, categoria_id e tipo);
 - O tipo deverá ser 'saida' ou 'entrada';
 
-<img src='../ativos/imagens/09 - Atualizar Transaçao.png' width ='1000'>
+<img src='./ativos/imagens/09 - Atualizar Transaçao.png' width ='1000'>
 
 #### 📌Excluir transação do usuário logado
 #### `DELETE` `/transacao/:id`
 
 >Essa é a rota que será chamada quando o usuário logado quiser excluir uma das suas transações cadastradas.
 
-<img src='../ativos/imagens/10 - Excluir Transaçao.png' width ='1000'>
+<img src='./ativos/imagens/10 - Excluir Transaçao.png' width ='1000'>
 
 #### 📌Obter extrato de transações
 #### `GET` `/transacao/extrato`
 
 > Essa é a rota que será chamada quando o usuário logado quiser obter o extrato de todas as suas transações cadastradas.
 
-<img src='../ativos/imagens/11 - Extrato.png' width ='1000'>
+<img src='./ativos/imagens/11 - Extrato.png' width ='1000'>
 
 
 
