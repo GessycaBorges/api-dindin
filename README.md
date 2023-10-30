@@ -1,5 +1,4 @@
-
-<img src='../ativos/imagens/dindin.jpg'>
+<img src='./ativos/imagens/dindin.jpg'>
 
 <h1 align="center"> 
 	Desafio - Módulo 03 - Back-end
